@@ -1,0 +1,106 @@
+const CACHE_NAME = 'royaye-shirin-cache-v1';
+const URLS_TO_CACHE = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/icon-192x192.svg',
+  '/icon-512x512.svg',
+  'https://cdn.tailwindcss.com',
+  'https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css'
+];
+
+// Install: Open cache and add shell files to it
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('Opened cache');
+        return cache.addAll(URLS_TO_CACHE);
+      })
+      .catch(err => {
+        console.error('Failed to cache during install:', err);
+      })
+  );
+});
+
+// Activate: Clean up old caches
+self.addEventListener('activate', event => {
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
+
+// Fetch: Implements a stale-while-revalidate strategy.
+self.addEventListener('fetch', event => {
+  // For non-GET requests, just use the network.
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // For URLs from esm.sh, use a cache-first strategy to ensure offline functionality for modules.
+  if (event.request.url.startsWith('https://esm.sh/')) {
+    event.respondWith(
+      caches.match(event.request).then(cachedResponse => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        return fetch(event.request).then(networkResponse => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        });
+      })
+    );
+    return;
+  }
+
+  // For all other requests, use stale-while-revalidate
+  event.respondWith(
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.match(event.request)
+        .then(response => {
+          // Fetch from network in the background to update the cache.
+          const fetchPromise = fetch(event.request).then(networkResponse => {
+            // If we got a valid response, clone it, and cache it.
+            if (networkResponse && networkResponse.status === 200) {
+              const responseToCache = networkResponse.clone();
+              cache.put(event.request, responseToCache);
+            }
+            return networkResponse;
+          }).catch(error => {
+            console.error('Fetch failed; returning offline fallback if available.', error);
+          });
+
+          // Return cached response if available, otherwise wait for the network response.
+          return response || fetchPromise;
+        })
+    })
+  );
+});
+
+
+// Listen for push notifications
+self.addEventListener('push', event => {
+  const data = event.data ? event.data.json() : { title: 'رویای شیرین من', body: 'یادآوری!', tag: 'general' };
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/icon-192x192.svg',
+      tag: data.tag
+    })
+  );
+});
