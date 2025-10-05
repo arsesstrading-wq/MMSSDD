@@ -225,6 +225,7 @@ export const strings = {
     installApp: 'نصب برنامه',
     installAppDesc: 'برنامه را روی دستگاه خود نصب کنید تا به صورت آفلاین و با تجربه‌ای شبیه به اپلیکیشن از آن استفاده کنید.',
     installOnDevice: 'نصب روی دستگاه',
+    installAppPrompt: 'دکمه نصب پس از چند لحظه استفاده از برنامه فعال می‌شود.',
 
     // Google Drive Sync
     googleDriveSync: 'همگام‌سازی با گوگل درایو',
@@ -699,6 +700,7 @@ Our goal is to empower you to live a healthier and happier life with diabetes.
     installApp: 'Install App',
     installAppDesc: 'Install the app on your device for offline access and an app-like experience.',
     installOnDevice: 'Install on this Device',
+    installAppPrompt: 'The install button becomes active after using the app for a moment.',
 
     // Google Drive Sync
     googleDriveSync: 'Google Drive Sync',

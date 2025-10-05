@@ -185,6 +185,7 @@ const App: React.FC = () => {
   const [dailyTip, setDailyTip] = useState<{ tip: string; date: string } | null>(null);
   const [isOnline, setIsOnline] = useState(() => navigator.onLine);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
 
   // Google Drive State
   const [isGoogleSignedIn, setIsGoogleSignedIn] = useState(false);
@@ -218,6 +219,11 @@ const App: React.FC = () => {
       setInstallPrompt(e as BeforeInstallPromptEvent);
     };
     window.addEventListener('beforeinstallprompt', handleInstallPrompt);
+
+    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+      setIsAppInstalled(true);
+    }
+    
     return () => {
       window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
     };
@@ -705,6 +711,7 @@ const App: React.FC = () => {
     const { outcome } = await installPrompt.userChoice;
     if (outcome === 'accepted') {
       console.log('User accepted the install prompt');
+      setIsAppInstalled(true);
     }
     setInstallPrompt(null);
   };
@@ -729,7 +736,7 @@ const App: React.FC = () => {
       case 'profile':
         return <ProfileScreen users={users} selectedUserId={selectedUserId!} setSelectedUserId={setSelectedUserId} updateUser={handleUpdateUser} addUser={() => handleAddUser(`${t('user')} ${users.length + 1}`, {})} deleteUser={handleDeleteUser} setView={handleSetView} t={t} language={language} />;
       case 'settings':
-        return <SettingsScreen setView={handleSetView} displayTheme={displayTheme} setDisplayTheme={setDisplayTheme} summaryTimeFrame={summaryTimeFrame} setSummaryTimeFrame={setSummaryTimeFrame} colorTheme={colorTheme} setColorTheme={setColorTheme} onThemeClick={handleThemeClick} onBackup={handleBackup} onRestoreFileSelect={handleFileSelectForRestore} t={t} language={language} setLanguage={setLanguage} onEnableNotifications={handleEnableNotifications} isOnline={isOnline} setModalContent={setModalContent} onInstallClick={handleInstallClick} showInstallButton={!!installPrompt} isGoogleSignedIn={isGoogleSignedIn} googleUser={googleUser} onGoogleSignIn={googleDriveService.signIn} onGoogleSignOut={googleDriveService.signOut} onGoogleSync={handleGoogleSync} onGoogleRestore={handleGoogleRestore} lastSyncTime={lastSyncTime} />;
+        return <SettingsScreen setView={handleSetView} displayTheme={displayTheme} setDisplayTheme={setDisplayTheme} summaryTimeFrame={summaryTimeFrame} setSummaryTimeFrame={setSummaryTimeFrame} colorTheme={colorTheme} setColorTheme={setColorTheme} onThemeClick={handleThemeClick} onBackup={handleBackup} onRestoreFileSelect={handleFileSelectForRestore} t={t} language={language} setLanguage={setLanguage} onEnableNotifications={handleEnableNotifications} isOnline={isOnline} setModalContent={setModalContent} onInstallClick={handleInstallClick} installPrompt={installPrompt} isAppInstalled={isAppInstalled} isGoogleSignedIn={isGoogleSignedIn} googleUser={googleUser} onGoogleSignIn={googleDriveService.signIn} onGoogleSignOut={googleDriveService.signOut} onGoogleSync={handleGoogleSync} onGoogleRestore={handleGoogleRestore} lastSyncTime={lastSyncTime} />;
       case 'logHistory':
         return <LogHistoryScreen currentUser={currentUser} setView={handleSetView} onEditLog={handleStartEditLog} onDeleteLog={setDeletingLogId} t={t} dynamicT={dynamicT} language={language} />;
       case 'logBloodSugar':

@@ -4,7 +4,12 @@ import Header from './Header';
 import { MoonIcon, BellIcon, LanguageIcon, DesktopIcon, InformationCircleIcon, UploadIcon, DownloadIcon, SunIcon, TimeframeIcon, GoogleIcon } from './Icons';
 import type { strings } from '../localization/strings';
 import { toPersianNum } from '../utils';
-import * as googleDriveService from '../services/googleDriveService';
+
+// Type for beforeinstallprompt event
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+}
+
 
 interface SettingsProps {
   setView: (view: View) => void;
@@ -24,7 +29,8 @@ interface SettingsProps {
   isOnline: boolean;
   setModalContent: (content: ModalContent | null) => void;
   onInstallClick: () => void;
-  showInstallButton: boolean;
+  installPrompt: BeforeInstallPromptEvent | null;
+  isAppInstalled: boolean;
   isGoogleSignedIn: boolean;
   googleUser: any;
   onGoogleSignIn: () => void;
@@ -38,7 +44,7 @@ const SettingsScreen: React.FC<SettingsProps> = ({
     setView, displayTheme, setDisplayTheme, summaryTimeFrame, 
     setSummaryTimeFrame, colorTheme, setColorTheme, onThemeClick, onBackup, onRestoreFileSelect,
     t, language, setLanguage, onEnableNotifications, isOnline,
-    setModalContent, onInstallClick, showInstallButton,
+    setModalContent, onInstallClick, installPrompt, isAppInstalled,
     isGoogleSignedIn, googleUser, onGoogleSignIn, onGoogleSignOut, onGoogleSync, onGoogleRestore, lastSyncTime
 }) => {
     const restoreInputRef = useRef<HTMLInputElement>(null);
@@ -108,26 +114,28 @@ const SettingsScreen: React.FC<SettingsProps> = ({
         <Header title={t('settingsTitle')} onBack={() => setView('profile')} />
         <div className="p-4 sm:p-6 lg:p-8 flex-grow overflow-y-auto no-scrollbar space-y-4 pb-24">
             
-            {showInstallButton && (
+            {!isAppInstalled && (
               <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-xl shadow-sm border border-green-300 dark:border-green-700">
                   <h3 className="text-xl font-bold mb-2 text-green-800 dark:text-green-200">{t('installApp')}</h3>
                   <p className="text-sm text-green-700 dark:text-green-300 mb-3">{t('installAppDesc')}</p>
                   <button 
                       onClick={onInstallClick}
-                      className="w-full flex items-center justify-center text-center py-3 px-4 rounded-lg bg-green-600 text-white hover:bg-green-700 shadow-md font-semibold"
+                      disabled={!installPrompt}
+                      className="w-full flex items-center justify-center text-center py-3 px-4 rounded-lg bg-green-600 text-white hover:bg-green-700 shadow-md font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
                       <DownloadIcon className="h-5 w-5 ltr:mr-2 rtl:ml-2"/>
                       {t('installOnDevice')}
                   </button>
+                  {!installPrompt && (
+                      <p className="text-xs text-center text-gray-500 mt-2">{t('installAppPrompt')}</p>
+                  )}
               </div>
             )}
             
             <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl shadow-sm">
                 <h3 className="text-xl font-bold mb-3">{t('googleDriveSync')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('googleDriveSyncDesc')}</p>
-                {!googleDriveService.isAvailable ? (
-                    <p className="text-sm text-yellow-600 dark:text-yellow-400">{t('googleDriveSyncDescShort')}</p>
-                ) : !isGoogleSignedIn ? (
+                {!isGoogleSignedIn ? (
                     <button onClick={onGoogleSignIn} className="w-full flex items-center justify-center py-2.5 px-4 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                         <GoogleIcon />
                         <span className="ltr:ml-3 rtl:mr-3 font-semibold text-gray-700 dark:text-gray-200">{t('signInWithGoogle')}</span>
